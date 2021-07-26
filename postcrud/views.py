@@ -1,6 +1,6 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404, HttpResponseRedirect
 from .forms import PostForm
-from .models import Post
+from .models import Post, Like
 
 # Create your views here.
 def list(request):
@@ -9,7 +9,8 @@ def list(request):
 
 def postshow(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
-    return render(request, 'postshow.html', {'post': post})
+    like = Like.objects.filter(user=request.user, post=post)
+    return render(request, 'postshow.html', {'post': post, 'like' : like})
 
 def postnew(request):
     return render(request, 'postnew.html')
@@ -26,3 +27,12 @@ def postcreate(request):
     else:
         form = PostForm()
         return render(request, 'postnew.html', {'form': form})
+
+def like(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+    liked = Like.objects.filter(user=request.user, post=post)
+    if not liked:
+        Like.objects.create(user=request.user, post=post)
+    else:
+        liked.delete()
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
